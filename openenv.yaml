@@ -1,0 +1,14 @@
+version: "1.0"
+environment:
+  name: dynamic-guardrail-generator
+  description: "An RL Environment where a 4-bit model formulates JSON AST rules against prompt injections."
+run:
+  proxy:
+    host: "0.0.0.0"
+    port: 8000
+    command: "uvicorn src.api.server:app --host 0.0.0.0 --port 8000"
+resources:
+  cpu: 1.0
+  memory: 1024
+evaluate:
+  command: "python src/inference/evaluate.py"

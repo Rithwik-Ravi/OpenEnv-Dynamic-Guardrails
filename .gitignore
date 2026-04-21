@@ -1,0 +1,29 @@
+# Environments
+.venv/
+venv/
+env/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary Metrics & Testing Data
+metrics.jsonl
+*.log
+scratch/
+
+# IDE / OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Heavy ML Checkpoints & Datasets (Prevent GH upload block)
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.h5
+.huggingface/
