@@ -9,14 +9,15 @@ def get_next_step():
     _current_step += 1
     return _current_step
 
-def append_metric(reward: float, recall: float, fpr: float, graph_json: str = None):
+def append_metric(reward: float, recall: float, fpr: float, graph_json: str = None, recent_traffic: list = None):
     step = get_next_step()
     payload = {
         "step": step,
         "reward": float(reward),
         "recall": float(recall),
         "fpr": float(fpr),
-        "ast_json": graph_json
+        "ast_json": graph_json,
+        "recent_traffic": recent_traffic or []
     }
     with open(METRICS_FILE, "a", encoding="utf-8") as f:
         f.write(json.dumps(payload) + "\n")
