@@ -61,9 +61,16 @@ async def step(action: Action):
     # Shuffle for a visually organic terminal feed
     random.shuffle(recent_traffic)
     
+    baseline_recall, baseline_fpr, baseline_syntax_error = 0.0, 0.0, True
+    baseline_reward = 0.0
+    if action.baseline_ast_json:
+        baseline_action = Action(ast_json=action.baseline_ast_json)
+        baseline_recall, baseline_fpr, baseline_syntax_error = env.step(baseline_action)
+        baseline_reward = reward_engine.calculate(baseline_recall, baseline_fpr, baseline_syntax_error)
+
     # Telemetry Stream to metrics.jsonl
     valid_graph = action.ast_json if not syntax_error else None
-    append_metric(reward, recall, fpr, valid_graph, recent_traffic)
+    append_metric(reward, recall, fpr, baseline_reward, baseline_recall, baseline_fpr, valid_graph, recent_traffic)
     
     result = StepResult(
         observation=env.state,

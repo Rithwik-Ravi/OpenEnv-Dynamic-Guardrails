@@ -78,12 +78,23 @@ def main():
         with suppress_output():
             try:
                 if model is not None and tokenizer is not None:
+                    # Pass 1: Trained Model
                     inputs = tokenizer([prompt], return_tensors="pt").to("cuda" if torch.cuda.is_available() else "cpu")
                     outputs = model.generate(**inputs, max_new_tokens=512, use_cache=True, pad_token_id=tokenizer.eos_token_id)
                     output_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
+                    del outputs
+                    
+                    # Pass 2: Baseline Model (Disabled Adapter)
+                    if hasattr(model, 'disable_adapter'):
+                        with model.disable_adapter():
+                            baseline_outputs = model.generate(**inputs, max_new_tokens=512, use_cache=True, pad_token_id=tokenizer.eos_token_id)
+                            baseline_output_text = tokenizer.batch_decode(baseline_outputs, skip_special_tokens=True)[0]
+                            del baseline_outputs
+                    else:
+                        baseline_output_text = output_text
                     
                     # Explicit 8GB memory ceiling GC
-                    del inputs, outputs
+                    del inputs
                     import gc
                     gc.collect()
                     if torch.cuda.is_available():
@@ -93,9 +104,11 @@ def main():
                     idx = min(i // 8, len(fallback_actions) - 1)
                     fallback = fallback_actions[idx]
                     output_text = json.dumps({"graph_id": f"AST-Fallback-{i}", "description": "Simulated Fallback", **fallback})
+                    baseline_output_text = json.dumps({"graph_id": f"AST-Baseline-{i}", "description": "Simulated Baseline", "root": {"operator": "OR", "children": []}})
 
                 action_payload = {
-                    "ast_json": output_text
+                    "ast_json": output_text,
+                    "baseline_ast_json": baseline_output_text
                 }
                 
                 # Send step to OpenEnv proxy wrapper

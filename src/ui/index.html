@@ -120,8 +120,8 @@
         <div class="grid grid-cols-2 gap-6 mb-6 h-72">
             <div class="bg-cardbg border border-borderc rounded-lg p-5 flex flex-col shadow-md">
                 <div class="flex justify-between mb-2">
-                    <h3 class="text-xs text-textsec font-mono uppercase tracking-wide">Reward Trajectory</h3>
-                    <span class="text-xs text-borderc font-mono border border-borderc px-1 rounded">R = TP - log(1+FP)</span>
+                    <h3 class="text-xs text-textsec font-mono uppercase tracking-wide">Reward: Baseline vs Trained</h3>
+                    <span class="text-xs text-borderc font-mono border border-borderc px-1 rounded">Delta</span>
                 </div>
                 <div class="flex-1 relative">
                     <canvas id="chart-reward"></canvas>
@@ -130,10 +130,10 @@
             
             <div class="bg-cardbg border border-borderc rounded-lg p-5 flex flex-col shadow-md">
                 <div class="flex justify-between mb-2">
-                    <h3 class="text-xs text-textsec font-mono uppercase tracking-wide">Recall vs FPR</h3>
+                    <h3 class="text-xs text-textsec font-mono uppercase tracking-wide">FPR: Baseline vs Trained</h3>
                 </div>
                 <div class="flex-1 relative">
-                    <canvas id="chart-sec"></canvas>
+                    <canvas id="chart-fpr"></canvas>
                 </div>
             </div>
         </div>
@@ -206,6 +206,9 @@
                 }
 
                 let reward = (1.0 * currentRecall) - (2.0 * Math.log1p(currentFpr));
+                let baselineRecall = 0.05;
+                let baselineFpr = 0.90;
+                let baselineReward = (1.0 * baselineRecall) - (2.0 * Math.log1p(baselineFpr));
                 
                 // Construct synthetic traffic based on probabilities
                 const traffic = [];
@@ -224,6 +227,9 @@
                     recall: currentRecall,
                     fpr: currentFpr,
                     reward: reward,
+                    baseline_recall: baselineRecall,
+                    baseline_fpr: baselineFpr,
+                    baseline_reward: baselineReward,
                     ast_json: JSON.parse(JSON.stringify(astSample)),
                     recent_traffic: traffic
                 });
@@ -253,18 +259,21 @@
         const ctxReward = document.getElementById('chart-reward').getContext('2d');
         const rewardChart = new Chart(ctxReward, {
             type: 'line',
-            data: { labels: [], datasets: [{ borderColor: '#ffb380', borderWidth: 2, data: [] }] },
+            data: { labels: [], datasets: [
+                { label: 'Trained Reward', borderColor: '#ffb380', borderWidth: 2, data: [] },
+                { label: 'Baseline Reward', borderColor: '#737373', borderWidth: 2, borderDash: [5, 5], data: [] }
+            ] },
             options: chartOptions
         });
 
-        const ctxSec = document.getElementById('chart-sec').getContext('2d');
-        const secChart = new Chart(ctxSec, {
+        const ctxFpr = document.getElementById('chart-fpr').getContext('2d');
+        const fprChart = new Chart(ctxFpr, {
             type: 'line',
             data: { 
                 labels: [], 
                 datasets: [
-                    { label: 'Recall', borderColor: '#3b82f6', borderWidth: 2, data: [] },
-                    { label: 'FPR', borderColor: '#ef4444', borderWidth: 2, data: [] }
+                    { label: 'Trained FPR', borderColor: '#ef4444', borderWidth: 2, data: [] },
+                    { label: 'Baseline FPR', borderColor: '#737373', borderWidth: 2, borderDash: [5, 5], data: [] }
                 ] 
             },
             options: chartOptions
@@ -276,19 +285,21 @@
             // Reset Chart Traces
             rewardChart.data.labels = [];
             rewardChart.data.datasets[0].data = [];
-            secChart.data.labels = [];
-            secChart.data.datasets[0].data = [];
-            secChart.data.datasets[1].data = [];
+            rewardChart.data.datasets[1].data = [];
+            fprChart.data.labels = [];
+            fprChart.data.datasets[0].data = [];
+            fprChart.data.datasets[1].data = [];
 
             dataArray.forEach(d => {
                 rewardChart.data.labels.push(d.step);
                 rewardChart.data.datasets[0].data.push(d.reward);
-                secChart.data.labels.push(d.step);
-                secChart.data.datasets[0].data.push(d.recall * 100);
-                secChart.data.datasets[1].data.push(d.fpr * 100);
+                rewardChart.data.datasets[1].data.push(d.baseline_reward || 0);
+                fprChart.data.labels.push(d.step);
+                fprChart.data.datasets[0].data.push(d.fpr * 100);
+                fprChart.data.datasets[1].data.push((d.baseline_fpr || 0) * 100);
             });
             rewardChart.update();
-            secChart.update();
+            fprChart.update();
 
             // Card Snapshot
             const last = dataArray[dataArray.length - 1];

@@ -2,6 +2,11 @@ import logging
 from src.rl.data import dataset_cache
 import random
 import json
+import os
+try:
+    from unsloth import FastLanguageModel, is_bfloat16_supported
+except ImportError:
+    pass
 from trl import GRPOConfig, GRPOTrainer
 from datasets import Dataset
 
@@ -47,8 +52,6 @@ def train():
     model_id = "Qwen/Qwen2.5-0.5B-Instruct"
 
     try:
-        from unsloth import FastLanguageModel
-        from unsloth import is_bfloat16_supported
         max_seq_length = 2048
         model, tokenizer = FastLanguageModel.from_pretrained(
             model_name=model_id,
@@ -73,27 +76,29 @@ def train():
         logging.error(f"Unsloth initialization failed (No GPU?): {e}. Aborting.")
         return
 
-    logging.info("Initializing bounded dataset cache (max=500)...")
-    dataset_cache.ingest_dummy_data()
+    logging.info("Loading FULL dataset for rigorous RLVR training...")
+    dataset_cache.max_size = 10000
+    dataset_cache.ingest_dummy_data() # Which actually pulls the real HF datasets now
     
     # Create simple dataset of prompts to trigger JSON AST generation
-    prompts_data = [{"prompt": "You are a cyber security expert. Generate a JSON AST GuardrailGraph to block prompt injections but allow benign queries. Output strictly in ```json format."}] * 100
+    # Provide enough prompts for 250 steps with batch_size=4 and grad_accum=4 (4000 total)
+    prompts_data = [{"prompt": "You are a cyber security expert. Generate a JSON AST GuardrailGraph to block prompt injections but allow benign queries. Output strictly in ```json format."}] * 5000
     train_dataset = Dataset.from_list(prompts_data)
     
     training_args = GRPOConfig(
         output_dir="outputs",
         learning_rate=1e-5,
-        per_device_train_batch_size=1, # Very small batch to fit in 8GB
-        gradient_accumulation_steps=4,
-        max_steps=50,
+        per_device_train_batch_size=4, # Pushing 8GB VRAM to 95% util
+        gradient_accumulation_steps=4, # Effective batch size 16
+        max_steps=250,                 # 30-45 mins on RTX 4070
         logging_steps=1,
-        save_steps=10,
+        save_steps=50,
         bf16=is_bfloat16_supported(),
         fp16=not is_bfloat16_supported(),
         optim="adamw_8bit"
     )
 
-    logging.info("Starting GRPO optimization...")
+    logging.info("Starting High-Fidelity GRPO optimization...")
     trainer = GRPOTrainer(
         model=model,
         processing_class=tokenizer,
@@ -104,9 +109,11 @@ def train():
     
     trainer.train()
     
-    logging.info("Saving trained adapter...")
-    model.save_pretrained("grpo_adapter")
-    tokenizer.save_pretrained("grpo_adapter")
+    export_dir = "models/trained_guardrail"
+    os.makedirs(export_dir, exist_ok=True)
+    logging.info(f"Saving trained adapter to {export_dir}...")
+    model.save_pretrained(export_dir)
+    tokenizer.save_pretrained(export_dir)
     logging.info("Training complete.")
 
 if __name__ == "__main__":
