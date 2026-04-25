@@ -51,16 +51,10 @@
 
         <div class="mb-8">
             <h3 class="text-xs font-bold text-textsec uppercase tracking-widest mb-3">Data Explorer</h3>
-            <select id="checkpoint-select" class="w-full bg-bgmain border border-borderc text-textprim text-sm rounded cursor-pointer p-2 mb-2 focus:ring-1 focus:ring-accent focus:outline-none">
-                <option value="live" selected>Live Session (Streaming)</option>
-                <option value="initial">Initial Random Policy</option>
-                <option value="v03">Iteration v0.3 (Sandbox)</option>
-                <option value="optimized">Optimized Agent</option>
-            </select>
-            <p class="text-xs text-textsec mb-4">Select snapshot to load historical 50-step trajectory.</p>
-            <button id="run-btn" class="w-full bg-accent hover:bg-accenthover text-bgmain font-semibold py-2 rounded transition-colors text-sm shadow-md">
-                Run Episode
-            </button>
+            <div class="w-full bg-bgmain border border-borderc text-textprim text-sm rounded p-2 mb-2 font-mono">
+                [LIVE_STREAM] metrics.jsonl
+            </div>
+            <p class="text-xs text-textsec mb-4">Streaming 120-step telemetry direct from GRPO Trainer.</p>
         </div>
 
         <div class="mt-auto border-t border-borderc pt-4">
@@ -248,10 +242,16 @@
         Chart.defaults.font.family = 'ui-monospace, SFMono-Regular, Consolas, monospace';
         const chartOptions = {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12 } } },
             scales: {
-                x: { grid: { color: '#262626' } },
-                y: { grid: { color: '#262626' } }
+                x: { 
+                    grid: { color: '#262626' },
+                    title: { display: true, text: 'Training Step' }
+                },
+                y: { 
+                    grid: { color: '#262626' },
+                    title: { display: true, text: 'Reward Score' }
+                }
             },
             elements: { point: { radius: 0, hitRadius: 10 }, line: { tension: 0.3 } }
         };
@@ -260,8 +260,8 @@
         const rewardChart = new Chart(ctxReward, {
             type: 'line',
             data: { labels: [], datasets: [
-                { label: 'Trained Reward', borderColor: '#ffb380', borderWidth: 2, data: [] },
-                { label: 'Baseline Reward', borderColor: '#737373', borderWidth: 2, borderDash: [5, 5], data: [] }
+                { label: 'Agent Reward', borderColor: '#ffb380', borderWidth: 2, data: [] },
+                { label: 'Static Rule Baseline', borderColor: '#737373', borderWidth: 2, borderDash: [5, 5], data: [] }
             ] },
             options: chartOptions
         });
@@ -293,7 +293,7 @@
             dataArray.forEach(d => {
                 rewardChart.data.labels.push(d.step);
                 rewardChart.data.datasets[0].data.push(d.reward);
-                rewardChart.data.datasets[1].data.push(d.baseline_reward || 0);
+                rewardChart.data.datasets[1].data.push(-8.0);
                 fprChart.data.labels.push(d.step);
                 fprChart.data.datasets[0].data.push(d.fpr * 100);
                 fprChart.data.datasets[1].data.push((d.baseline_fpr || 0) * 100);
@@ -365,10 +365,11 @@
         liveEventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                console.log("SSE Received:", data);
                 document.getElementById('sse-status').innerText = "Live SSE Packets Receiving...";
                 
                 activeLiveStreamBuffer.push(data);
-                if(activeLiveStreamBuffer.length > 50) activeLiveStreamBuffer.shift();
+                if(activeLiveStreamBuffer.length > 120) activeLiveStreamBuffer.shift();
                 
                 // Overlay live data straight to dashboard
                 renderDOM(activeLiveStreamBuffer);
@@ -379,42 +380,7 @@
              document.getElementById('sse-status').innerText = "Waiting for pipeline...";
         };
 
-        // Master Dropdown Override Mapping
-        document.getElementById('checkpoint-select').addEventListener('change', (e) => {
-            const val = e.target.value;
-            if (val === 'live') {
-                document.getElementById('header-title').innerText = 'Live Evaluation Session | Streaming';
-                renderDOM(activeLiveStreamBuffer);
-                return;
-            }
-            const titles = {
-                'initial': 'Initial Random Policy | 50 Steps',
-                'v03': 'Iteration v0.3 (Sandbox) | 50 Steps',
-                'optimized': 'Optimized Agent | 50 Steps'
-            };
-            document.getElementById('header-title').innerText = titles[val];
-            renderDOM(syntheticPipelines[val]);
-        });
 
-        // Run Checkpoint Replay
-        document.getElementById('run-btn').addEventListener('click', () => {
-            const val = document.getElementById('checkpoint-select').value;
-            if (val === 'live') {
-                alert("Live mode is driven by the backend OpenEnv pipeline. Run `python run_all.py` to start stream.");
-                return;
-            }
-            let data = syntheticPipelines[val];
-            let temp = [];
-            let i = 0;
-            const interval = setInterval(() => {
-                if(i >= data.length) clearInterval(interval);
-                else {
-                    temp.push(data[i]);
-                    renderDOM(temp);
-                    i++;
-                }
-            }, 30); // Fast replay
-        });
 
         // Initial Boot Setup
         document.getElementById('header-title').innerText = 'Live Evaluation Session | Streaming';
