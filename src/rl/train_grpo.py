@@ -133,10 +133,10 @@ def train():
         output_dir="outputs",
         learning_rate=1e-5,
         per_device_train_batch_size=4, # Pushing 8GB VRAM to 95% util
-        gradient_accumulation_steps=4, # Effective batch size 16
-        num_generations=4,             # Fix: Reduce from 8 to 4 to prevent OOM / Shared Memory Swapping
-        max_steps=250,                 # 30-45 mins on RTX 4070
-        max_completion_length=1024,    # Fix: Prevent 256 token cutoff
+        gradient_accumulation_steps=8, # VRAM efficiency
+        num_generations=4,             # Optimize sampling
+        max_steps=120,                 # Sub-4 hour target
+        max_completion_length=512,     # Shorten generations
         max_prompt_length=512,
         logging_steps=1,
         save_steps=50,
