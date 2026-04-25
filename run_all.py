@@ -5,7 +5,7 @@ import psutil
 import subprocess
 import signal
 
-PORTS_TO_CHECK = [8000, 8001]
+PORTS_TO_CHECK = [8000]
 processes = []
 
 def kill_process_on_port(port):
@@ -53,18 +53,16 @@ def main():
     
     python_exe = sys.executable
     
-    # Launch Proxy using sys.executable -m uvicorn to ensure it binds within the venv perfectly
+    # Launch Core Server (API + UI merged) using sys.executable -m uvicorn
     p1 = start_background_process([python_exe, "-m", "uvicorn", "src.api.server:app", "--port", "8000"], "Core API Server")
     processes.append(p1)
-    
-    # Launch UI
-    p2 = start_background_process([python_exe, "-m", "uvicorn", "src.ui.dashboard:app", "--port", "8001"], "Telemetry UI Server")
-    processes.append(p2)
     
     print("[WAIT] Allowing servers to initialize (2 seconds)...")
     time.sleep(2)
     
     print("\n[EVALUATION] Starting Headless Evaluator...\n")
+    if os.path.exists("metrics.jsonl"):
+        open("metrics.jsonl", "w").close()
     try:
         subprocess.run([python_exe, "src/inference/evaluate.py"], check=True)
     except subprocess.CalledProcessError as e:
@@ -73,7 +71,7 @@ def main():
         pass
     
     print("\n[EVALUATION] Finished.")
-    print("[READY] Servers are still running in background. View UI at http://127.0.0.1:8001")
+    print("[READY] Servers are still running in background. View UI at http://127.0.0.1:8000")
     print("[READY] Press Ctrl+C to shutdown completely.")
     try:
         while True:
