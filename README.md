@@ -10,8 +10,13 @@ license: mit
 # Dynamic Guardrail Generator
 **Team Winnovators (Rithwik & Parveshh)**
 
-🔗 **[Hugging Face Space URL]** | 🔗 **[YouTube 2-Min Pitch Video]** | 🔗 **[Google Colab Training PoC]**
+<div align="center">
 
+[![Hugging Face Space](https://img.shields.io/badge/🤗_Live_Demo-Hugging_Face-FFD21E?style=for-the-badge)](https://huggingface.co/spaces/rithwik-ravikumar/OpenEnv-Dynamic-Guardrails)
+[![YouTube Pitch](https://img.shields.io/badge/▶️_Pitch_Video-YouTube-FF0000?style=for-the-badge)](YOUR_YOUTUBE_LINK_HERE)
+[![Google Colab](https://img.shields.io/badge/🪐_Training_PoC-Google_Colab-F9AB00?style=for-the-badge)](https://colab.research.google.com/drive/1LIGdmIs4sFQ21-e5Bm7Kz3noYmMpFEkd?usp=sharing)
+
+</div>
 ---
 
 ## 🛑 The Problem Space
