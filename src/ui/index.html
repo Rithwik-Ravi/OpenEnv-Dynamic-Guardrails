@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,12 +30,28 @@
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; color: #e5e5e5; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #141414; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #262626; border-radius: 4px; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #e5e5e5;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #141414;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #262626;
+            border-radius: 4px;
+        }
     </style>
 </head>
+
 <body class="h-screen flex overflow-hidden">
 
     <!-- Sidebar -->
@@ -61,8 +78,9 @@
             <h3 class="text-xs font-bold text-textsec uppercase tracking-widest mb-3">Proxy Integration</h3>
             <div class="flex items-center gap-2">
                 <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
                 </span>
                 <span id="sse-status" class="text-xs text-textprim">Monitoring SSE loop...</span>
             </div>
@@ -70,15 +88,17 @@
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-8 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMGEwYTBhIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIgc3Ryb2tlPSIjMTExIiBzdHJva2Utd2lkdGg9IjEuNSI+PC9wYXRoPgo8L3N2Zz4=')] bg-opacity-10" style="background-blend-mode: overlay;">
-        
+    <div class="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-8 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjMGEwYTBhIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIgc3Ryb2tlPSIjMTExIiBzdHJva2Utd2lkdGg9IjEuNSI+PC9wYXRoPgo8L3N2Zz4=')] bg-opacity-10"
+        style="background-blend-mode: overlay;">
+
         <!-- Header -->
         <div class="flex justify-between items-end mb-6 bg-bgmain p-4 rounded-xl border border-borderc shadow-lg">
             <div>
                 <h1 class="text-2xl font-semibold text-textprim" id="header-title">Optimized Agent | 50 Steps</h1>
                 <p class="text-sm text-textsec mt-1">Multi-Objective Log-Barrier Reward Surface</p>
             </div>
-            <div class="px-3 py-1 border border-borderc rounded shadow text-xs font-mono text-textsec flex items-center gap-2 bg-cardbg">
+            <div
+                class="px-3 py-1 border border-borderc rounded shadow text-xs font-mono text-textsec flex items-center gap-2 bg-cardbg">
                 <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div> READY
             </div>
         </div>
@@ -100,7 +120,7 @@
                 <div class="px-6">
                     <p class="text-xs text-textsec uppercase mb-1">Current Step</p>
                     <p class="text-2xl font-mono text-textprim" id="metric-step">--</p>
-                    <p class="text-xs text-textsec font-mono mt-1">Max 50</p>
+                    <p class="text-xs text-textsec font-mono mt-1">Max 120</p>
                 </div>
                 <div class="px-6">
                     <p class="text-xs text-textsec uppercase mb-1">Reward</p>
@@ -121,7 +141,7 @@
                     <canvas id="chart-reward"></canvas>
                 </div>
             </div>
-            
+
             <div class="bg-cardbg border border-borderc rounded-lg p-5 flex flex-col shadow-md">
                 <div class="flex justify-between mb-2">
                     <h3 class="text-xs text-textsec font-mono uppercase tracking-wide">FPR: Baseline vs Trained</h3>
@@ -135,21 +155,27 @@
         <!-- Bottom Row (AST & Threat Feed) -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
             <!-- AST Visualizer -->
-            <div class="bg-cardbg border border-borderc rounded-lg p-5 flex flex-col min-h-[300px] max-h-[350px] shadow-md">
-                <h3 class="text-xs text-textsec font-mono uppercase tracking-wide mb-4">Synthesized Guardrail AST Validation</h3>
-                <div class="flex-1 bg-bgmain border border-borderc p-4 rounded font-mono text-sm overflow-auto text-[#6ee7b7] custom-scrollbar shadow-inner whitespace-pre" id="ast-viewer">...</div>
+            <div
+                class="bg-cardbg border border-borderc rounded-lg p-5 flex flex-col min-h-[300px] max-h-[350px] shadow-md">
+                <h3 class="text-xs text-textsec font-mono uppercase tracking-wide mb-4">Synthesized Guardrail AST
+                    Validation</h3>
+                <div class="flex-1 bg-bgmain border border-borderc p-4 rounded font-mono text-sm overflow-auto text-[#6ee7b7] custom-scrollbar shadow-inner whitespace-pre"
+                    id="ast-viewer">...</div>
             </div>
 
             <!-- Live Threat Feed -->
-            <div class="bg-cardbg border border-borderc rounded-lg p-5 flex flex-col min-h-[300px] max-h-[350px] shadow-md bg-opacity-95">
+            <div
+                class="bg-cardbg border border-borderc rounded-lg p-5 flex flex-col min-h-[300px] max-h-[350px] shadow-md bg-opacity-95">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xs text-textsec font-mono uppercase tracking-wide">Live Threat Feed</h3>
                     <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                        <span
+                            class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
                         <span class="text-[10px] text-textsec font-mono uppercase">Intercepting TCP Stream</span>
                     </div>
                 </div>
-                <div class="flex-1 border border-borderc p-3 rounded font-mono text-xs overflow-y-auto custom-scrollbar shadow-inner flex flex-col gap-2 bg-[#050505]" id="threat-feed">
+                <div class="flex-1 border border-borderc p-3 rounded font-mono text-xs overflow-y-auto custom-scrollbar shadow-inner flex flex-col gap-2 bg-[#050505]"
+                    id="threat-feed">
                     <div class="text-textsec italic text-center mt-10">Awaiting traffic packets...</div>
                 </div>
             </div>
@@ -166,13 +192,13 @@
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12 } } },
             scales: {
-                x: { 
+                x: {
                     grid: { color: '#262626' },
-                    title: { display: true, text: 'Training Step' }
+                    title: { display: true, text: 'Training Iterations' }
                 },
-                y: { 
+                y: {
                     grid: { color: '#262626' },
-                    title: { display: true, text: 'Reward Score' }
+                    title: { display: true, text: 'Mean Reward Score' }
                 }
             },
             elements: { point: { radius: 0, hitRadius: 10 }, line: { tension: 0.3 } }
@@ -181,29 +207,31 @@
         const ctxReward = document.getElementById('chart-reward').getContext('2d');
         const rewardChart = new Chart(ctxReward, {
             type: 'line',
-            data: { labels: [], datasets: [
-                { label: 'Agent Reward', borderColor: '#ffb380', borderWidth: 2, data: [] },
-                { label: 'Static Rule Baseline', borderColor: '#737373', borderWidth: 2, borderDash: [5, 5], data: [] }
-            ] },
+            data: {
+                labels: [], datasets: [
+                    { label: 'Agent Reward', borderColor: '#ffb380', borderWidth: 2, data: [] },
+                    { label: 'Static Regex Baseline', borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], data: [] }
+                ]
+            },
             options: chartOptions
         });
 
         const ctxFpr = document.getElementById('chart-fpr').getContext('2d');
         const fprChart = new Chart(ctxFpr, {
             type: 'line',
-            data: { 
-                labels: [], 
+            data: {
+                labels: [],
                 datasets: [
                     { label: 'Trained FPR', borderColor: '#ef4444', borderWidth: 2, data: [] },
                     { label: 'Baseline FPR', borderColor: '#737373', borderWidth: 2, borderDash: [5, 5], data: [] }
-                ] 
+                ]
             },
             options: chartOptions
         });
 
         function renderDOM(dataArray) {
-            if(!dataArray || dataArray.length === 0) return;
-            
+            if (!dataArray || dataArray.length === 0) return;
+
             // Reset Chart Traces
             rewardChart.data.labels = [];
             rewardChart.data.datasets[0].data = [];
@@ -235,23 +263,23 @@
             if (typeof displayAst === 'string') {
                 try {
                     displayAst = JSON.parse(displayAst);
-                } catch(e) {}
+                } catch (e) { }
             }
             document.getElementById('ast-viewer').innerText = JSON.stringify(displayAst, null, 4);
-            
+
             // Render Live Threat Feed
             const feedContainer = document.getElementById('threat-feed');
             feedContainer.innerHTML = '';
-            
+
             if (last.recent_traffic && last.recent_traffic.length > 0) {
                 last.recent_traffic.forEach(item => {
                     const el = document.createElement('div');
                     el.className = "flex gap-3 p-2 border-l-4 rounded-r-md bg-[#111] bg-opacity-80 leading-tight items-start transition-all";
-                    
+
                     let prefix = "";
                     let textColor = "";
                     let borderColor = "";
-                    
+
                     if (item.is_malicious && item.was_blocked) {
                         prefix = "[🛡️  BLOCKED]";
                         textColor = "text-red-400";
@@ -270,13 +298,13 @@
                         textColor = "text-slate-500";
                         borderColor = "border-slate-600";
                     }
-                    
+
                     el.classList.add(borderColor);
                     el.innerHTML = `<span class="shrink-0 select-none ${textColor} w-[100px] font-bold text-[10px] tracking-wider pt-0.5">${prefix}</span> <span class="${textColor} break-all opacity-90">${item.prompt_text}</span>`;
                     feedContainer.appendChild(el);
                 });
             } else {
-                 feedContainer.innerHTML = '<div class="text-textsec italic text-center mt-10">No traffic detected in this cycle.</div>';
+                feedContainer.innerHTML = '<div class="text-textsec italic text-center mt-10">No traffic detected in this cycle.</div>';
             }
         }
 
@@ -289,17 +317,17 @@
                 const data = JSON.parse(event.data);
                 console.log("SSE Received:", data);
                 document.getElementById('sse-status').innerText = "Live SSE Packets Receiving...";
-                
+
                 activeLiveStreamBuffer.push(data);
-                if(activeLiveStreamBuffer.length > 120) activeLiveStreamBuffer.shift();
-                
+                if (activeLiveStreamBuffer.length > 120) activeLiveStreamBuffer.shift();
+
                 // Overlay live data straight to dashboard
                 renderDOM(activeLiveStreamBuffer);
-            } catch (e) {}
+            } catch (e) { }
         };
 
         liveEventSource.onerror = () => {
-             document.getElementById('sse-status').innerText = "Waiting for pipeline...";
+            document.getElementById('sse-status').innerText = "Waiting for pipeline...";
         };
 
 
@@ -311,9 +339,10 @@
             recall: 0,
             fpr: 0,
             reward: 0,
-            ast_json: {"status": "Waiting for live pipeline... Run inference to begin streaming."},
+            ast_json: { "status": "Waiting for live pipeline... Run inference to begin streaming." },
             recent_traffic: []
         }]);
     </script>
 </body>
+
 </html>
