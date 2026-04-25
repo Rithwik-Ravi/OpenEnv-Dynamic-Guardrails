@@ -1,15 +1,33 @@
-FROM python:3.10-slim
+FROM python:3.13-slim
 
-# System dependencies for bitsandbytes
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Hugging Face Spaces requires running as a non-root user (UID 1000)
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
 
-COPY requirements.txt .
+WORKDIR $HOME/app
+
+# Copy requirements
+COPY --chown=user requirements.txt .
+
+# Install PyTorch 2.11 with cu126 (matching our local battle-tested environment)
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126 --upgrade
+
+# Install remaining requirements and Triton explicitly for Linux cloud environment
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir triton
 
-COPY . .
+# Copy application files
+COPY --chown=user . .
 
-CMD ["bash"]
+# Expose the mandatory port required by Hugging Face Spaces
+EXPOSE 7860
+
+# Launch the core FastAPI application on the expected HF Spaces port
+CMD ["python", "-m", "uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "7860"]

@@ -29,10 +29,31 @@ def openenv_reward_func(prompts, completions, **kwargs):
     benign_samples = batch["benign"]
     env.reset(adv_samples, benign_samples)
 
+    if random.random() < 0.05:
+        logging.info(f"--- Sample Prompt ---\n{prompts[0]}\n---------------------")
+        logging.info(f"--- Sample Completion ---\n{completions[0][:200]}...\n-------------------------")
+
     for comp in completions:
+        # Extract string if comp is a ChatML message list (e.g. [{"role": "assistant", "content": "..."}])
+        if isinstance(comp, list):
+            if len(comp) > 0 and isinstance(comp[-1], dict) and "content" in comp[-1]:
+                comp_text = comp[-1]["content"]
+            else:
+                comp_text = str(comp)
+        else:
+            comp_text = str(comp)
+
+        partial_reward = 0.0
+        if '{' in comp_text:
+            partial_reward += 0.5
         try:
-            clean_json = extract_and_clean_json(comp)
+            clean_json = extract_and_clean_json(comp_text)
             parsed_ast = json.loads(clean_json)
+            partial_reward += 1.0 # Valid JSON syntax
+            
+            if 'root' in parsed_ast or 'operator' in parsed_ast:
+                partial_reward += 2.0 # Has basic AST structure
+
             # Validate AST
             ast_wrapper = GuardrailGraph.model_validate(parsed_ast)
             
@@ -40,10 +61,13 @@ def openenv_reward_func(prompts, completions, **kwargs):
             action = Action(ast_json=clean_json)
             recall, fpr, syntax_error = env.step(action)
             r = r_engine.calculate(recall, fpr, syntax_error)
-            rewards.append(r)
-        except (json.JSONDecodeError, ValidationError):
-            # Massive negative reward for syntax errors
-            rewards.append(-10.0)
+            rewards.append(r + partial_reward)
+        except json.JSONDecodeError:
+            # Massive negative reward for syntax errors, but add partial
+            rewards.append(-10.0 + partial_reward)
+        except ValidationError:
+            # Valid JSON but invalid schema
+            rewards.append(-5.0 + partial_reward)
             
     return rewards
 
@@ -80,9 +104,10 @@ def train():
     dataset_cache.max_size = 10000
     dataset_cache.ingest_dummy_data() # Which actually pulls the real HF datasets now
     
-    # Create simple dataset of prompts to trigger JSON AST generation
-    # Provide enough prompts for 250 steps with batch_size=4 and grad_accum=4 (4000 total)
-    prompts_data = [{"prompt": "You are a cyber security expert. Generate a JSON AST GuardrailGraph to block prompt injections but allow benign queries. Output strictly in ```json format."}] * 5000
+    # Create simple dataset of prompts to trigger JSON AST generation using ChatML
+    system_prompt = "You are an autonomous Blue-Team engineer. Generate a highly constrained, Pydantic-validated JSON Guardrail Logic Graph to block prompt injections but allow benign queries. Output ONLY valid JSON inside ```json ... ``` blocks. Do not include conversational filler."
+    user_prompt = "Analyze the threat vectors and synthesize the GuardrailGraph now."
+    prompts_data = [{"prompt": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]}] * 5000
     train_dataset = Dataset.from_list(prompts_data)
     
     training_args = GRPOConfig(
@@ -90,7 +115,10 @@ def train():
         learning_rate=1e-5,
         per_device_train_batch_size=4, # Pushing 8GB VRAM to 95% util
         gradient_accumulation_steps=4, # Effective batch size 16
+        num_generations=4,             # Fix: Reduce from 8 to 4 to prevent OOM / Shared Memory Swapping
         max_steps=250,                 # 30-45 mins on RTX 4070
+        max_completion_length=1024,    # Fix: Prevent 256 token cutoff
+        max_prompt_length=512,
         logging_steps=1,
         save_steps=50,
         bf16=is_bfloat16_supported(),
