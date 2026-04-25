@@ -13,7 +13,7 @@ class BoundedMemoryCache:
         self.adversarial_cache: List[str] = []
         self.benign_cache: List[str] = []
 
-    def ingest_dummy_data(self):
+    def ingest_production_baseline(self):
         logging.info("Downloading bounded HF datasets...")
         if load_dataset:
             try:
@@ -50,7 +50,7 @@ class BoundedMemoryCache:
 
     def sample_batch(self, batch_size: int = 16) -> Dict[str, List[str]]:
         if not self.adversarial_cache:
-            self.ingest_dummy_data()
+            self.ingest_production_baseline()
             
         adv = random.sample(self.adversarial_cache, min(batch_size, len(self.adversarial_cache)))
         ben = random.sample(self.benign_cache, min(batch_size, len(self.benign_cache)))

@@ -1,5 +1,5 @@
 from typing import List, Union, Literal, Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 import json
 import re
 
@@ -9,7 +9,7 @@ class SemanticFilter(BaseModel):
 
 class LogicNode(BaseModel):
     operator: Literal["AND", "OR", "NOT"]
-    children: List[Union["LogicNode", SemanticFilter]]
+    children: List[Union["LogicNode", SemanticFilter]] = Field(..., min_length=1)
 
 class GuardrailGraph(BaseModel):
     graph_id: str

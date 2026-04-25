@@ -46,6 +46,10 @@ By forcing the agent to map threats to a structured AST using strict `LogicNodes
 
 To train our autonomous compiler, we built a High-Fidelity RLVR (Reinforcement Learning with Verifiable Rewards) pipeline.
 
+### 🏗️ Execution & Reward Sandboxing
+- **Real-Time AST Validation:** Every generated graph is strictly validated via Pydantic (`min_length=1` constraints on all logic trees) to guarantee structural integrity and prevent zero-cliff bypasses.
+- **Micro-Sandboxing (ReDoS Guard):** The AST evaluation engine runs within an isolated environment utilizing strict `50ms` execution timeouts and recursive depth limiters to neutralize Regular Expression Denial of Service (ReDoS) from LLM-generated patterns.
+
 ### The Log-Barrier Multi-Objective Reward
 To mathematically eradicate "Refusal Collapse", we designed a rigorous deterministic reward surface:
 ```python

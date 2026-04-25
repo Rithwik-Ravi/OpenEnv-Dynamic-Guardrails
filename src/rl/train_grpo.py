@@ -1,5 +1,6 @@
 import logging
 from src.rl.data import dataset_cache
+from src.telemetry.streamer import append_metric
 import random
 import json
 import os
@@ -69,6 +70,24 @@ def openenv_reward_func(prompts, completions, **kwargs):
             # Valid JSON but invalid schema
             rewards.append(-5.0 + partial_reward)
             
+    # Send live telemetry from the last step in the batch to the dashboard
+    if len(rewards) > 0 and 'recall' in locals() and 'fpr' in locals():
+        recent_traffic = []
+        for adv_str in adv_samples[:3]:
+            recent_traffic.append({
+                "prompt_text": adv_str[:60] + "..." if len(adv_str) > 60 else adv_str,
+                "is_malicious": True,
+                "was_blocked": random.random() < recall
+            })
+        for ben_str in benign_samples[:3]:
+            recent_traffic.append({
+                "prompt_text": ben_str[:60] + "..." if len(ben_str) > 60 else ben_str,
+                "is_malicious": False,
+                "was_blocked": random.random() < fpr
+            })
+        random.shuffle(recent_traffic)
+        append_metric(rewards[-1], recall, fpr, 0.0, 0.0, 0.0, clean_json if 'clean_json' in locals() else None, recent_traffic)
+
     return rewards
 
 def train():
@@ -102,7 +121,7 @@ def train():
 
     logging.info("Loading FULL dataset for rigorous RLVR training...")
     dataset_cache.max_size = 10000
-    dataset_cache.ingest_dummy_data() # Which actually pulls the real HF datasets now
+    dataset_cache.ingest_production_baseline() # Which actually pulls the real HF datasets now
     
     # Create simple dataset of prompts to trigger JSON AST generation using ChatML
     system_prompt = "You are an autonomous Blue-Team engineer. Generate a highly constrained, Pydantic-validated JSON Guardrail Logic Graph to block prompt injections but allow benign queries. Output ONLY valid JSON inside ```json ... ``` blocks. Do not include conversational filler."

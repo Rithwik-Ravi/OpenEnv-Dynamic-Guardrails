@@ -1,6 +1,7 @@
 import json
 import re
 import math
+import time
 from typing import List, Any
 from collections import Counter
 from pydantic import ValidationError
@@ -12,7 +13,16 @@ def calculate_entropy(text: str) -> float:
     probabilities = [n_x/len(text) for x, n_x in Counter(text).items()]
     return -sum([p * math.log2(p) for p in probabilities])
 
-def evaluate_node(node: dict, text: str) -> bool:
+def evaluate_node(node: dict, text: str, depth: int = 0, start_time: float = None) -> bool:
+    if start_time is None:
+        start_time = time.time()
+        
+    if time.time() - start_time > 0.05: # 50ms timeout
+        return False
+        
+    if depth > 10: # Recursion guard
+        return False
+
     # Check if it's a SemanticFilter
     if "filter_type" in node:
         filter_type = node["filter_type"]
@@ -37,13 +47,13 @@ def evaluate_node(node: dict, text: str) -> bool:
     children = node.get("children", [])
     if operator == "AND":
         if not children: return False
-        return all(evaluate_node(child, text) for child in children)
+        return all(evaluate_node(child, text, depth + 1, start_time) for child in children)
     elif operator == "OR":
         if not children: return False
-        return any(evaluate_node(child, text) for child in children)
+        return any(evaluate_node(child, text, depth + 1, start_time) for child in children)
     elif operator == "NOT":
         if not children: return False
-        return not evaluate_node(children[0], text)
+        return not evaluate_node(children[0], text, depth + 1, start_time)
     return False
 
 try:
@@ -81,17 +91,21 @@ class GuardrailEnvironment(BaseEnvironment):
         # We evaluate against raw dict to avoid recursive pydantic object overhead
         root_node = ast_wrapper.model_dump().get("root", {})
 
-        # Evaluate Recall (TP rate on adversarial)
-        adv_total = len(self.state.adversarial_samples)
-        for text in self.state.adversarial_samples:
-            if evaluate_node(root_node, text):
-                true_positives += 1
-                
-        # Evaluate FPR (FP rate on benign)
-        ben_total = len(self.state.benign_samples)
-        for text in self.state.benign_samples:
-            if evaluate_node(root_node, text):
-                false_positives += 1
+        try:
+            # Evaluate Recall (TP rate on adversarial)
+            adv_total = len(self.state.adversarial_samples)
+            for text in self.state.adversarial_samples:
+                if evaluate_node(root_node, text):
+                    true_positives += 1
+                    
+            # Evaluate FPR (FP rate on benign)
+            ben_total = len(self.state.benign_samples)
+            for text in self.state.benign_samples:
+                if evaluate_node(root_node, text):
+                    false_positives += 1
+        except Exception:
+            # Global guard against any unhandled execution exception (e.g. RecursionError escaping depth check)
+            return 0.0, 0.0, True
 
         recall = true_positives / adv_total if adv_total > 0 else 0.0
         fpr = false_positives / ben_total if ben_total > 0 else 0.0

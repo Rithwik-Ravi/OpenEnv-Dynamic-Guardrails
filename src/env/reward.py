@@ -9,6 +9,9 @@ class LogBarrierReward:
         """
         if syntax_error:
             return -10.0
+            
+        if recall == 0.0:
+            return -5.0
 
         reward = (1.0 * recall) - (2.0 * math.log1p(fpr))
         return float(reward)
