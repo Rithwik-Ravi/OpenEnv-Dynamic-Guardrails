@@ -26,6 +26,9 @@ RUN pip install --no-cache-dir triton
 # Copy application files
 COPY --chown=user . .
 
+# Set PYTHONPATH so Uvicorn can resolve the 'src' module
+ENV PYTHONPATH="$HOME/app:$PYTHONPATH"
+
 # Expose the mandatory port required by Hugging Face Spaces
 EXPOSE 7860
 
