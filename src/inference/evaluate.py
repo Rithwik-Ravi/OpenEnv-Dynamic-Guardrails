@@ -14,18 +14,20 @@ logging.getLogger("httpx").setLevel(logging.ERROR)
 @contextlib.contextmanager
 def suppress_output():
     """
-    Context manager to redirect stdout and stderr to os.devnull.
+    Context manager to redirect stdout and stderr to os.devnull at the OS level.
     """
     with open(os.devnull, 'w') as devnull:
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
-        sys.stdout = devnull
-        sys.stderr = devnull
+        old_stdout_fd = os.dup(1)
+        old_stderr_fd = os.dup(2)
+        os.dup2(devnull.fileno(), 1)
+        os.dup2(devnull.fileno(), 2)
         try:
             yield
         finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
+            os.dup2(old_stdout_fd, 1)
+            os.dup2(old_stderr_fd, 2)
+            os.close(old_stdout_fd)
+            os.close(old_stderr_fd)
 
 def main():
     print("[START]", flush=True)
@@ -56,8 +58,8 @@ def main():
                 load_in_4bit=True,
             )
             FastLanguageModel.for_inference(model)
-        except ImportError:
-            # Fallback if Unsloth is missing (prevents crash but won't be fully functional)
+        except Exception as e:
+            # Fallback if Unsloth is missing or GPU is unavailable (prevents crash)
             model, tokenizer = None, None
             
         prompt = "You are a cyber security expert. Generate a JSON AST GuardrailGraph to block prompt injections but allow benign queries. Output strictly in ```json format."
@@ -79,6 +81,13 @@ def main():
                     inputs = tokenizer([prompt], return_tensors="pt").to("cuda" if torch.cuda.is_available() else "cpu")
                     outputs = model.generate(**inputs, max_new_tokens=512, use_cache=True, pad_token_id=tokenizer.eos_token_id)
                     output_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
+                    
+                    # Explicit 8GB memory ceiling GC
+                    del inputs, outputs
+                    import gc
+                    gc.collect()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
                 else:
                     import json
                     idx = min(i // 8, len(fallback_actions) - 1)

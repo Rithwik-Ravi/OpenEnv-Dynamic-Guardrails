@@ -9,3 +9,4 @@ bitsandbytes>=0.40.0
 datasets>=2.14.0
 websockets>=11.0.0
 httpx>=0.24.1
+openenv>=0.1.0
