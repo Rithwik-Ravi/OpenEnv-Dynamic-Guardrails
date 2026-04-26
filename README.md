@@ -13,7 +13,7 @@ license: mit
 <div align="center">
 
 [![Hugging Face Space](https://img.shields.io/badge/🤗_Live_Demo-Hugging_Face-FFD21E?style=for-the-badge)](https://huggingface.co/spaces/rithwik-ravikumar/OpenEnv-Dynamic-Guardrails)
-[![YouTube Pitch](https://img.shields.io/badge/▶️_Pitch_Video-YouTube-FF0000?style=for-the-badge)]((https://youtu.be/Ae9oubiVh4E))
+[![YouTube Pitch](https://img.shields.io/badge/▶️_Pitch_Video-YouTube-FF0000?style=for-the-badge)](https://youtu.be/Ae9oubiVh4E)
 [![Google Colab](https://img.shields.io/badge/🪐_Training_PoC-Google_Colab-F9AB00?style=for-the-badge)](https://colab.research.google.com/drive/1LIGdmIs4sFQ21-e5Bm7Kz3noYmMpFEkd?usp=sharing)
 
 </div>
