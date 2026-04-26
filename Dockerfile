@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+    build-essential git \
     && rm -rf /var/lib/apt/lists/*
 
 # Hugging Face Spaces requires running as a non-root user (UID 1000)
