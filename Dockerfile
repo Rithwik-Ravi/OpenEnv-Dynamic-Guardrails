@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.10-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -29,8 +29,8 @@ COPY --chown=user . .
 # Set PYTHONPATH so Uvicorn can resolve the 'src' module
 ENV PYTHONPATH="/home/user/app"
 
-# Expose application port
-EXPOSE 8000
+# Expose Hugging Face Spaces port
+EXPOSE 7860
 
 # Launch FastAPI app with Uvicorn
-CMD ["uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "7860"]

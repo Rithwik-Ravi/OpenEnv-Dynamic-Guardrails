@@ -16,18 +16,36 @@ METRICS_FILE = "metrics.jsonl"
 async def event_generator(request: Request):
     if not os.path.exists(METRICS_FILE):
         open(METRICS_FILE, "w").close()
-        
+
     with open(METRICS_FILE, "r", encoding="utf-8") as f:
+        last_pos = f.tell()
         while True:
             if await request.is_disconnected():
                 break
-                
-            line = f.readline()
-            if not line:
+
+            try:
+                file_size = os.path.getsize(METRICS_FILE)
+            except OSError:
+                await asyncio.sleep(0.2)
+                continue
+
+            # Handle truncation or log rotation safely.
+            if file_size < last_pos:
+                f.seek(0)
+                last_pos = 0
+
+            f.seek(last_pos)
+            new_lines = f.readlines()
+            if not new_lines:
                 await asyncio.sleep(0.1)
                 continue
-            
-            yield f"data: {line}\n\n"
+
+            last_pos = f.tell()
+            for line in new_lines:
+                payload = line.strip()
+                if not payload:
+                    continue
+                yield f"data: {payload}\n\n"
 
 @app.get("/stream")
 async def stream(request: Request):

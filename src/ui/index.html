@@ -108,12 +108,12 @@
             <h3 class="text-xs text-textsec font-mono uppercase tracking-wide mb-4">Performance Overview</h3>
             <div class="grid grid-cols-4 gap-6 divide-x divide-borderc">
                 <div class="px-2">
-                    <p class="text-xs text-textsec uppercase mb-1">Recall (Security)</p>
+                    <p class="text-xs text-textsec uppercase mb-1">Rolling Recall</p>
                     <p class="text-2xl font-mono text-textprim" id="metric-recall">--%</p>
                     <p class="text-xs text-emerald-500 font-mono mt-1">Target ≥ 95.0%</p>
                 </div>
                 <div class="px-6">
-                    <p class="text-xs text-textsec uppercase mb-1">FPR (Utility Cost)</p>
+                    <p class="text-xs text-textsec uppercase mb-1">Rolling FPR</p>
                     <p class="text-2xl font-mono text-textprim" id="metric-fpr">--%</p>
                     <p class="text-xs text-red-400 font-mono mt-1">Target < 5.0%</p>
                 </div>
@@ -405,7 +405,7 @@
 
                 playbackQueue.push(metric);
                 if (!playbackInterval) {
-                    playbackInterval = setInterval(processQueue, 250);
+                    playbackInterval = setInterval(processQueue, 200);
                 }
             } catch (e) {
                 document.getElementById('sse-status').innerText = "Malformed stream packet ignored.";
