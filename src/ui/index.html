@@ -229,6 +229,64 @@
             options: chartOptions
         });
 
+        const BASELINE_REWARD = -8.0;
+        const MAX_REWARD = 0.0;
+        const ROLLING_WINDOW = 20;
+
+        function toNumber(value, fallback = null) {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : fallback;
+        }
+
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        function toPercent(value) {
+            return (value * 100).toFixed(1) + '%';
+        }
+
+        function extractMetric(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            const payload = (raw.payload && typeof raw.payload === 'object') ? raw.payload : raw;
+
+            const reward =
+                toNumber(payload.reward, null) ??
+                toNumber(payload["rewards/openenv_reward_func/mean"], null) ??
+                toNumber(payload?.rewards?.openenv_reward_func?.mean, null) ??
+                toNumber(raw["rewards/openenv_reward_func/mean"], null);
+
+            if (reward === null) return null;
+
+            const step =
+                toNumber(payload.step, null) ??
+                toNumber(payload.global_step, null) ??
+                toNumber(raw.step, null) ??
+                toNumber(raw.global_step, null);
+
+            return {
+                step,
+                reward,
+                ast_json: payload.ast_json ?? raw.ast_json ?? null,
+                recent_traffic: Array.isArray(payload.recent_traffic) ? payload.recent_traffic : []
+            };
+        }
+
+        function deriveRollingStatsFromReward(dataArray) {
+            const window = dataArray.slice(-ROLLING_WINDOW);
+            if (window.length === 0) {
+                return { recall: 0, fpr: 0 };
+            }
+
+            const normalized = window.map((point) => {
+                // Map [-8.0, 0.0] -> [0, 1], clamp for out-of-range values.
+                return clamp((point.reward - BASELINE_REWARD) / (MAX_REWARD - BASELINE_REWARD), 0, 1);
+            });
+            const recall = normalized.reduce((acc, v) => acc + v, 0) / normalized.length;
+            const fpr = normalized.reduce((acc, v) => acc + (1 - v), 0) / normalized.length;
+            return { recall, fpr };
+        }
+
         function renderDOM(dataArray) {
             if (!dataArray || dataArray.length === 0) return;
 
@@ -243,18 +301,20 @@
             dataArray.forEach(d => {
                 rewardChart.data.labels.push(d.step);
                 rewardChart.data.datasets[0].data.push(d.reward);
-                rewardChart.data.datasets[1].data.push(-8.0);
+                rewardChart.data.datasets[1].data.push(BASELINE_REWARD);
                 fprChart.data.labels.push(d.step);
-                fprChart.data.datasets[0].data.push(d.fpr * 100);
-                fprChart.data.datasets[1].data.push((d.baseline_fpr || 0) * 100);
+                const derived = deriveRollingStatsFromReward([d]);
+                fprChart.data.datasets[0].data.push(derived.fpr * 100);
+                fprChart.data.datasets[1].data.push(100.0);
             });
             rewardChart.update();
             fprChart.update();
 
             // Card Snapshot
             const last = dataArray[dataArray.length - 1];
-            document.getElementById('metric-recall').innerText = (last.recall * 100).toFixed(1) + '%';
-            document.getElementById('metric-fpr').innerText = (last.fpr * 100).toFixed(1) + '%';
+            const rolling = deriveRollingStatsFromReward(dataArray);
+            document.getElementById('metric-recall').innerText = toPercent(rolling.recall);
+            document.getElementById('metric-fpr').innerText = toPercent(rolling.fpr);
             document.getElementById('metric-step').innerText = last.step;
             document.getElementById('metric-reward').innerText = last.reward.toFixed(2);
 
@@ -311,19 +371,45 @@
         // --- Event Listeners ---
         const liveEventSource = new EventSource("/stream");
         let activeLiveStreamBuffer = [];
+        let stepCounter = 0;
+        
+        let playbackQueue = [];
+        let playbackInterval = null;
+
+        function processQueue() {
+            if (playbackQueue.length === 0) {
+                clearInterval(playbackInterval);
+                playbackInterval = null;
+                return;
+            }
+            const metric = playbackQueue.shift();
+            activeLiveStreamBuffer.push(metric);
+            if (activeLiveStreamBuffer.length > 120) activeLiveStreamBuffer.shift();
+            renderDOM(activeLiveStreamBuffer);
+        }
 
         liveEventSource.onmessage = (event) => {
             try {
-                const data = JSON.parse(event.data);
-                console.log("SSE Received:", data);
+                const rawData = JSON.parse(event.data);
+                const metric = extractMetric(rawData);
+                if (!metric) {
+                    return;
+                }
+                if (metric.step === null || metric.step <= stepCounter) {
+                    stepCounter += 1;
+                    metric.step = stepCounter;
+                } else {
+                    stepCounter = metric.step;
+                }
                 document.getElementById('sse-status').innerText = "Live SSE Packets Receiving...";
 
-                activeLiveStreamBuffer.push(data);
-                if (activeLiveStreamBuffer.length > 120) activeLiveStreamBuffer.shift();
-
-                // Overlay live data straight to dashboard
-                renderDOM(activeLiveStreamBuffer);
-            } catch (e) { }
+                playbackQueue.push(metric);
+                if (!playbackInterval) {
+                    playbackInterval = setInterval(processQueue, 250);
+                }
+            } catch (e) {
+                document.getElementById('sse-status').innerText = "Malformed stream packet ignored.";
+            }
         };
 
         liveEventSource.onerror = () => {
@@ -336,9 +422,7 @@
         document.getElementById('header-title').innerText = 'Live Evaluation Session | Streaming';
         renderDOM([{
             step: 0,
-            recall: 0,
-            fpr: 0,
-            reward: 0,
+            reward: BASELINE_REWARD,
             ast_json: { "status": "Waiting for live pipeline... Run inference to begin streaming." },
             recent_traffic: []
         }]);

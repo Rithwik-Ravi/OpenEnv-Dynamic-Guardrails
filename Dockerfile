@@ -29,8 +29,8 @@ COPY --chown=user . .
 # Set PYTHONPATH so Uvicorn can resolve the 'src' module
 ENV PYTHONPATH="/home/user/app"
 
-# Expose the mandatory port required by Hugging Face Spaces
-EXPOSE 7860
+# Expose application port
+EXPOSE 8000
 
-# Launch the core FastAPI application on the expected HF Spaces port
-CMD ["python", "-m", "uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "7860"]
+# Launch FastAPI app with Uvicorn
+CMD ["uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "8000"]
