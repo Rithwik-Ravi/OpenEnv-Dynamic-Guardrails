@@ -16,8 +16,11 @@ WORKDIR $HOME/app
 # Copy requirements
 COPY --chown=user requirements.txt .
 
-# Install PyTorch 2.11 with cu126 (matching our local battle-tested environment)
-RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126 --upgrade
+# Pre-install problematic dependencies to prevent pip metadata backtracking
+RUN pip install --no-cache-dir typing-extensions Jinja2
+
+# Install stable PyTorch cu124
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 
 # Install remaining requirements and Triton explicitly for Linux cloud environment
 RUN pip install --no-cache-dir -r requirements.txt
