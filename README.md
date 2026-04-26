@@ -34,7 +34,7 @@ Current industry solutions are fatally flawed:
 
 ## 💡 Our Solution: The OpenEnv Compiler Architecture
 
-Aligning with **Theme #3.1 (Professional Tasks: Cybersecurity/Blue-Teaming)**, we solved this by separating the intelligence from the execution. 
+Aligning with **Theme #4: Self-Improvement**, we solved this by separating the intelligence from the execution. 
 
 The **Dynamic Guardrail Generator** treats the LLM as an autonomous Blue-Team engineer. Running inside our strict `OpenEnv` grading environment, the agent does not evaluate prompts directly. Instead, it synthesizes a highly constrained, Pydantic-validated **JSON Guardrail Logic Graph** (a Domain Specific Language). 
 
@@ -99,7 +99,7 @@ To bypass known PyTorch and Triton compiler conflicts on Windows, you must confi
 *(Note: If Triton throws a `Python.h` missing error, create a directory junction linking your base Python `include` folder to your project root `Include` folder).*
 
 ### 2. Run the Master Orchestrator
-We have bundled a master orchestrator (`run_all.py`) that automatically cleans up zombie ports, boots the FastAPI Core Server (Port 8000) and Telemetry UI Server (Port 8001) into the background, and triggers the Headless OpenEnv Evaluator (`evaluate.py`).
+We have bundled a master orchestrator (`run_all.py`) that automatically cleans up zombie ports, boots the merged Core API & Telemetry UI Server (Port 8000) into the background, and triggers the Headless OpenEnv Evaluator (`evaluate.py`).
 
 ```bash
 python run_all.py
@@ -107,4 +107,4 @@ python run_all.py
 
 ### 3. View the Dashboard
 Once the orchestrator initializes, open your browser to:
-[http://127.0.0.1:8001/ui](http://127.0.0.1:8001/ui) to watch the live A/B comparison and Threat Feed stream in real-time.
+[http://127.0.0.1:8000](http://127.0.0.1:8000) to watch the live A/B comparison and Threat Feed stream in real-time.
