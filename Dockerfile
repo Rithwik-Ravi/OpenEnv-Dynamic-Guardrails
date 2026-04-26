@@ -24,8 +24,10 @@ RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://
 
 # Install remaining requirements and Triton explicitly for Linux cloud environment
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir triton
+RUN pip install --no-cache-dir triton xformers --index-url https://download.pytorch.org/whl/cu124
 
+# Install Unsloth natively to bypass PyPI resolution constraints
+RUN pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
 # Copy application files
 COPY --chown=user . .
 
