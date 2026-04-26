@@ -9,7 +9,6 @@ __pycache__/
 *$py.class
 
 # Temporary Metrics & Testing Data
-metrics.jsonl
 *.log
 scratch/
 
